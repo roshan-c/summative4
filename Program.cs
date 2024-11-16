@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace summative4
 {
@@ -134,17 +135,11 @@ namespace summative4
                 double doubleExam = studentData.Exam;
                 double doubleCapstone = studentData.Capstone;
 
-                double portfolioPercentage = 100 * doublePortfolio / 30;
-                portfolioPercentage = Math.Round(portfolioPercentage, 2, MidpointRounding.AwayFromZero);
+                int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
+                int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
+                int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
 
-                double openBookExamPercentage = 100 * doubleExam / 20;
-                openBookExamPercentage = Math.Round(openBookExamPercentage, 2, MidpointRounding.AwayFromZero);
-
-                double capstoneProjectPercentage = 100 * doubleCapstone / 100;
-                capstoneProjectPercentage = Math.Round(capstoneProjectPercentage, 2, MidpointRounding.AwayFromZero);
-
-                double totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
-                totalPercentage = Math.Round(totalPercentage, 2, MidpointRounding.AwayFromZero);
+                int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
 
                 Console.WriteLine($"Total Percentage: {totalPercentage}");
                 Console.WriteLine();
@@ -153,9 +148,25 @@ namespace summative4
 
         static void OutputDataToFile(StudentData[] studentDataArray, string filePath)
         {
+            // Sort the student data array by total percentage in descending order
+            var sortedStudentDataArray = studentDataArray.OrderByDescending(studentData =>
+            {
+                int portfolio = studentData.ChallengesGroup1.Take(4).Sum() + studentData.ChallengesGroup2.Take(2).Sum();
+                double doublePortfolio = portfolio;
+                double doubleExam = studentData.Exam;
+                double doubleCapstone = studentData.Capstone;
+
+                int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
+                int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
+                int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
+
+                int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
+                return totalPercentage;
+            }).ToArray();
+
             using (StreamWriter writer = new StreamWriter(filePath))
             {
-                foreach (var studentData in studentDataArray)
+                foreach (var studentData in sortedStudentDataArray)
                 {
                     // Calculate the total percentage
                     int portfolio = studentData.ChallengesGroup1.Take(4).Sum() + studentData.ChallengesGroup2.Take(2).Sum();
@@ -163,17 +174,11 @@ namespace summative4
                     double doubleExam = studentData.Exam;
                     double doubleCapstone = studentData.Capstone;
 
-                    double portfolioPercentage = 100 * doublePortfolio / 30;
-                    portfolioPercentage = Math.Round(portfolioPercentage, 2, MidpointRounding.AwayFromZero);
+                    int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
+                    int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
+                    int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
 
-                    double openBookExamPercentage = 100 * doubleExam / 20;
-                    openBookExamPercentage = Math.Round(openBookExamPercentage, 2, MidpointRounding.AwayFromZero);
-
-                    double capstoneProjectPercentage = 100 * doubleCapstone / 100;
-                    capstoneProjectPercentage = Math.Round(capstoneProjectPercentage, 2, MidpointRounding.AwayFromZero);
-
-                    double totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
-                    totalPercentage = Math.Round(totalPercentage, 2, MidpointRounding.AwayFromZero);
+                    int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
 
                     // Write the data to the file
                     writer.WriteLine($"{totalPercentage} - {studentData.FirstName} {studentData.LastName} ({studentData.ID})");
