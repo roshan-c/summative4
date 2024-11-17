@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace summative4
 {
@@ -19,8 +20,11 @@ namespace summative4
             // Print the loaded student data to confirm it's there
             PrintLoadedData(studentDataArray);
 
-            // Output the data to a text file
-            OutputDataToFile(studentDataArray, "output.txt");
+            // Define the file path where you want to save the data
+            string filePath = "output.txt";
+
+            // Call the OutputDataToFile method
+            OutputDataToFile(studentDataArray, filePath);
         }
 
         static StudentData[] loadData()
@@ -42,7 +46,8 @@ namespace summative4
 
             // Prompt the user to select a file by typing the corresponding number
             Console.WriteLine("Select a file by typing the number:");
-            if (int.TryParse(Console.ReadLine(), out int selectedIndex) && selectedIndex > 0 && selectedIndex <= sortedFiles.Length)
+            if (int.TryParse(Console.ReadLine(), out int selectedIndex) && selectedIndex > 0 &&
+                selectedIndex <= sortedFiles.Length)
             {
                 // Get the selected file based on the user's input
                 string selectedFile = sortedFiles[selectedIndex - 1];
@@ -67,7 +72,8 @@ namespace summative4
         static StudentData[] ParseAndSaveData(string data)
         {
             // Define regex patterns to extract student and marks information
-            string studentPattern = @"Student:\[ID:(\d+),LastName:(\w+),FirstName:(\w+)\],Marks:\[Challenges:\[(.*?)\],Exam:(\d+),Capstone:(\d+)\]";
+            string studentPattern =
+                @"Student:\[ID:(\d+),LastName:(\w+),FirstName:(\w+)\],Marks:\[Challenges:\[(.*?)\],Exam:(\d+),Capstone:(\d+)\]";
             var studentMatches = Regex.Matches(data, studentPattern);
 
             // Create a list to store student data
@@ -121,69 +127,51 @@ namespace summative4
                 Console.WriteLine($"Student ID: {studentData.ID}");
                 Console.WriteLine($"Last Name: {studentData.LastName}");
                 Console.WriteLine($"First Name: {studentData.FirstName}");
-                Console.WriteLine($"Challenge Scores: {string.Join(", ", studentData.Challenges)}");
-                Console.WriteLine($"First Challenges Group: {string.Join(", ", studentData.ChallengesGroup1)}");
-                Console.WriteLine($"Second Challenges Group: {string.Join(", ", studentData.ChallengesGroup2)}");
-                Console.WriteLine($"Exam: {studentData.Exam}");
-                Console.WriteLine($"Capstone: {studentData.Capstone}");
+                Console.WriteLine($" Portfolio Challenge Scores: {string.Join(", ", studentData.Challenges)}");
 
-                // Calculate and print the sum of the first 4 marks from ChallengesGroup1 and the first 2 marks from ChallengesGroup2
+                // Calculate the portfolio score
                 int portfolio = studentData.ChallengesGroup1.Take(4).Sum() + studentData.ChallengesGroup2.Take(2).Sum();
-                Console.WriteLine($"Sum of first 4 marks from ChallengesGroup1 and first 2 marks from ChallengesGroup2: {portfolio}");
 
-                double doublePortfolio = portfolio;
-                double doubleExam = studentData.Exam;
-                double doubleCapstone = studentData.Capstone;
+                // Calculate percentages
+                double portfolioPercentage = 100 * portfolio / 30.0;
+                double openBookExamPercentage = 100 * studentData.Exam / 20.0;
+                double capstoneProjectPercentage = 100 * studentData.Capstone / 100.0;
 
-                int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
-                int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
-                int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
+                // Calculate total percentage
+                studentData.TotalPercentage = (int)Math.Round((portfolioPercentage * 50 / 100.0) +
+                                                              (openBookExamPercentage * 25 / 100.0) +
+                                                              (capstoneProjectPercentage * 25 / 100.0));
 
-                int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
-
-                Console.WriteLine($"Total Percentage: {totalPercentage}");
+                // Print percentages
+                Console.WriteLine($"Portfolio Percentage: {portfolioPercentage}");
+                Console.WriteLine($"Open Book Exam Percentage: {openBookExamPercentage}");
+                Console.WriteLine($"Capstone Project Percentage: {capstoneProjectPercentage}");
+                Console.WriteLine($"Total Percentage: {studentData.TotalPercentage}");
                 Console.WriteLine();
             }
         }
 
         static void OutputDataToFile(StudentData[] studentDataArray, string filePath)
         {
-            // Sort the student data array by total percentage in descending order
-            var sortedStudentDataArray = studentDataArray.OrderByDescending(studentData =>
-            {
-                int portfolio = studentData.ChallengesGroup1.Take(4).Sum() + studentData.ChallengesGroup2.Take(2).Sum();
-                double doublePortfolio = portfolio;
-                double doubleExam = studentData.Exam;
-                double doubleCapstone = studentData.Capstone;
-
-                int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
-                int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
-                int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
-
-                int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
-                return totalPercentage;
-            }).ToArray();
+            // Sort the student data array in descending order of TotalPercentage
+            var sortedStudentDataArray = studentDataArray.OrderByDescending(s => s.TotalPercentage).ToArray();
 
             using (StreamWriter writer = new StreamWriter(filePath))
             {
                 foreach (var studentData in sortedStudentDataArray)
                 {
-                    // Calculate the total percentage
-                    int portfolio = studentData.ChallengesGroup1.Take(4).Sum() + studentData.ChallengesGroup2.Take(2).Sum();
-                    double doublePortfolio = portfolio;
-                    double doubleExam = studentData.Exam;
-                    double doubleCapstone = studentData.Capstone;
-
-                    int portfolioPercentage = (int)Math.Round(100 * doublePortfolio / 30, MidpointRounding.AwayFromZero);
-                    int openBookExamPercentage = (int)Math.Round(100 * doubleExam / 20, MidpointRounding.AwayFromZero);
-                    int capstoneProjectPercentage = (int)Math.Round(100 * doubleCapstone / 100, MidpointRounding.AwayFromZero);
-
-                    int totalPercentage = (portfolioPercentage * 50 / 100) + (openBookExamPercentage * 25 / 100) + (capstoneProjectPercentage * 25 / 100);
-
                     // Write the data to the file
-                    writer.WriteLine($"{totalPercentage} - {studentData.FirstName} {studentData.LastName} ({studentData.ID})");
+                    writer.WriteLine(
+                        $"{studentData.TotalPercentage} - {studentData.FirstName} {studentData.LastName} - ({studentData.ID})");
                 }
             }
+
+            // Open the text file after writing
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            });
         }
     }
 
@@ -198,5 +186,6 @@ namespace summative4
         public int[] ChallengesGroup2 { get; set; }
         public int Exam { get; set; }
         public int Capstone { get; set; }
+        public int TotalPercentage { get; set; }
     }
 }
